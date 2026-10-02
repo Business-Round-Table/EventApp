@@ -1,0 +1,150 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline-1": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "arv_sharedsharepointonline_027f6"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365-1": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "arv_sharedoffice365_26f29"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_an_item_is_deleted": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://businessroundtabledc.sharepoint.com/sites/MeetingsSupport",
+              "table": "8feda546-0ab4-4267-a16c-cc5e3908302a"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetOnDeletedItems",
+              "connectionName": "shared_sharepointonline-1"
+            }
+          },
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Minute"
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "ea783379-824d-4356-b601-e8f93471d464"
+          }
+        }
+      },
+      "actions": {
+        "Send_an_email_from_a_shared_mailbox_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/MailboxAddress": "events@brt.org",
+              "emailMessage/To": "eventmanagement@brt.org;HMelo@brt.org",
+              "emailMessage/Subject": "BRT Event or Meeting Deleted/Canceled!",
+              "emailMessage/Body": "<p class=\"editor-paragraph\">Event or Meeting has been Deleted/Canceled!</p><br><p class=\"editor-paragraph\">Name:</p><p class=\"editor-paragraph\">@{triggerOutputs()?['body/Name']}</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SharedMailboxSendEmailV2",
+              "connectionName": "shared_office365-1"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "0e43ee68-74cd-4ba1-a9c9-8178446921eb"
+          }
+        },
+        "Get_events_(V4)-copy": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "table": "AAMkAGJmM2NhYjYwLWY3YWUtNDQzZi04YWNmLWQ4NWY0NjU3ODBkNgBGAAAAAADH6FojD30qQ5UzDQ1pHb4KBwCnGNFsKKGVTZJlXbHcFXjvAAAAAAEGAACnGNFsKKGVTZJlXbHcFXjvAAD8YzerAAA=",
+              "$filter": "contains(subject, '@{triggerOutputs()?['body/Name']}')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "V4CalendarGetItems",
+              "connectionName": "shared_office365-1"
+            }
+          },
+          "runAfter": {
+            "Send_an_email_from_a_shared_mailbox_(V2)": [
+              "Succeeded"
+            ]
+          }
+        },
+        "For_each": {
+          "type": "Foreach",
+          "foreach": "@outputs('Get_events_(V4)-copy')?['body/value']",
+          "actions": {
+            "Get_event_(V3)-copy": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "table": "AAMkAGJmM2NhYjYwLWY3YWUtNDQzZi04YWNmLWQ4NWY0NjU3ODBkNgBGAAAAAADH6FojD30qQ5UzDQ1pHb4KBwCnGNFsKKGVTZJlXbHcFXjvAAAAAAEGAACnGNFsKKGVTZJlXbHcFXjvAAD8YzerAAA=",
+                  "id": "@items('For_each')?['id']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "V3CalendarGetItem",
+                  "connectionName": "shared_office365-1"
+                }
+              }
+            },
+            "Delete_event_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "calendar": "AAMkAGJmM2NhYjYwLWY3YWUtNDQzZi04YWNmLWQ4NWY0NjU3ODBkNgBGAAAAAADH6FojD30qQ5UzDQ1pHb4KBwCnGNFsKKGVTZJlXbHcFXjvAAAAAAEGAACnGNFsKKGVTZJlXbHcFXjvAAD8YzerAAA=",
+                  "event": "@outputs('Get_event_(V3)-copy')?['body/id']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "CalendarDeleteItem_V2",
+                  "connectionName": "shared_office365-1"
+                }
+              },
+              "runAfter": {
+                "Get_event_(V3)-copy": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Get_events_(V4)-copy": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

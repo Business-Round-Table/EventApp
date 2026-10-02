@@ -1,0 +1,566 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline-1": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "arv_sharedsharepointonline_027f6"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365-1": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "arv_sharedoffice365_add57"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365_1": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "arv_sharedoffice365_26f29"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_an_item_is_created": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://businessroundtabledc.sharepoint.com/sites/MeetingsSupport",
+              "table": "8feda546-0ab4-4267-a16c-cc5e3908302a"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetOnNewItems",
+              "connectionName": "shared_sharepointonline-1"
+            }
+          },
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Minute"
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "4b3f4c82-91a3-44aa-acf4-f2e548bd16fd"
+          }
+        }
+      },
+      "actions": {
+        "Get_item": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://businessroundtabledc.sharepoint.com/sites/MeetingsSupport",
+              "table": "8feda546-0ab4-4267-a16c-cc5e3908302a",
+              "id": "@triggerBody()?['ID']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetItem",
+              "connectionName": "shared_sharepointonline-1"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "25369d89-53ee-4ffa-af32-256ee1ec41cf"
+          }
+        },
+        "Initialize_Start_Date_variable": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "StartDate",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "Get_item": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "254486f3-ccf2-46fc-8d74-d57811618513"
+          }
+        },
+        "Initialize_End_Date_variable": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "EndDate",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "Initialize_Start_Date_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "80365122-6fcf-4930-943d-b92894e56939"
+          }
+        },
+        "Initialize_Room_Email_variable": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Room Email",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "Initialize_End_Date_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "c5bb70e1-02fd-4b91-8ece-87efd6564d23"
+          }
+        },
+        "Initialize_Room_Name_Selection_variable": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Room Name Selection",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "Initialize_Room_Email_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "af0a02f4-1155-4425-9d26-210540694230"
+          }
+        },
+        "Set_Room_Name_Selection_variable": {
+          "type": "SetVariable",
+          "inputs": {
+            "name": "Room Name Selection",
+            "value": "@outputs('Get_item')?['body/RoomorLocationName/Value']"
+          },
+          "runAfter": {
+            "Initialize_Room_Name_Selection_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "ccd1094a-503f-4567-b28f-41744ccb00dd"
+          }
+        },
+        "Switch": {
+          "type": "Switch",
+          "expression": "@variables('Room Name Selection')",
+          "default": {
+            "actions": {
+              "Set_variable": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "Room Email",
+                  "value": "@null"
+                },
+                "metadata": {
+                  "operationMetadataId": "5cb2857d-834c-4777-9104-d400b7eab1cb"
+                }
+              }
+            }
+          },
+          "cases": {
+            "Case": {
+              "actions": {
+                "Set_Room_Email_variable": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "boardcr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "5106c779-2910-4399-8d3e-7d8a22f7988e"
+                  }
+                }
+              },
+              "case": "Board Conference Room"
+            },
+            "Case 2": {
+              "actions": {
+                "Set_Room_email_variable_2": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "teddycr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "91de0c7c-9017-451e-a53a-8201f108e945"
+                  }
+                }
+              },
+              "case": "Theodore Conference Room"
+            },
+            "Case 3": {
+              "actions": {
+                "Set_Room_email_variable_3": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "franklincr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "42d33839-d3ec-4a31-86d2-5250e2c9aace"
+                  }
+                }
+              },
+              "case": "Franklin Conference Room"
+            },
+            "Case 4": {
+              "actions": {
+                "Set_Room_email_variable_4": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "teddycr@brt.org; franklincr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "15008879-e77b-4b38-87fd-9f410dfc5553"
+                  }
+                }
+              },
+              "case": "Roosevelt Conference Room"
+            },
+            "Case 5": {
+              "actions": {
+                "Set_Room_email_variable_5": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "teddycr@brt.org; franklincr@brt.org; boardcr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "34b44b74-f11e-4984-b8da-37ea22291174"
+                  }
+                }
+              },
+              "case": "Riverview Conference Room"
+            },
+            "Case 6": {
+              "actions": {
+                "Set_Room_email_variable_6": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "plenarycr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "f9874abf-7e52-4ef1-a7ed-f6da48c14e4a"
+                  }
+                }
+              },
+              "case": "Plenary Conference Room"
+            },
+            "Case 7": {
+              "actions": {
+                "Set_Room_email_variable_7": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "greenroomcr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "f7a00953-330a-47ce-9eb8-417f85cac80c"
+                  }
+                }
+              },
+              "case": "Green Room"
+            },
+            "Case 8": {
+              "actions": {
+                "Set_Room_email_variable_8": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "washingtoncr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "eb202fb9-b619-419b-8445-3c953c2bac99"
+                  }
+                }
+              },
+              "case": "Washington Conference Room"
+            },
+            "Case 9": {
+              "actions": {
+                "Set_Room_email_variable_9": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "adamscr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "f987e936-4bda-47bc-bdbc-925d7bca3105"
+                  }
+                }
+              },
+              "case": "Adams Conference Room"
+            },
+            "Case 10": {
+              "actions": {
+                "Set_Room_email_variable_10": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "GrantCR@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "1a2519fd-f8e4-41eb-864d-cb770800ba45"
+                  }
+                }
+              },
+              "case": "Grant Conference Room"
+            },
+            "Case 11": {
+              "actions": {
+                "Set_Room_email_variable_11": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "MobileCart@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "e4fbf1f6-bcae-4c58-8a06-f6ac056f2a5e"
+                  }
+                }
+              },
+              "case": "4th Floor Conference Room"
+            },
+            "Case 12": {
+              "actions": {
+                "Set_Room_email_variable_12": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "Signaturecr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "e9961c64-8226-4d46-a918-0a5a6d39254b"
+                  }
+                }
+              },
+              "case": "Signature Conference Room"
+            },
+            "Case 13": {
+              "actions": {
+                "Set_Room_email_variable_13": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "jeffersoncr@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "a61e2de3-c102-4e3b-b50b-5ee7bf1d3396"
+                  }
+                }
+              },
+              "case": "Jefferson Conference Room"
+            },
+            "Case 14": {
+              "actions": {
+                "Set_Room_email_variable_13_1": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "LincolnCR@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "a61e2de3-c102-4e3b-b50b-5ee7bf1d3396"
+                  }
+                }
+              },
+              "case": "Lincoln Conference Room"
+            },
+            "Case 15": {
+              "actions": {
+                "Set_Room_email_variable_13_2": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "EisenhowerCR@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "a61e2de3-c102-4e3b-b50b-5ee7bf1d3396"
+                  }
+                }
+              },
+              "case": "Eisenhower Conference Room"
+            },
+            "Case 16": {
+              "actions": {
+                "Set_Room_email_variable_13_3": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "TrumanCR@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "a61e2de3-c102-4e3b-b50b-5ee7bf1d3396"
+                  }
+                }
+              },
+              "case": "Truman Conference Room"
+            },
+            "Case 17": {
+              "actions": {
+                "Set_Room_email_variable_13_3_1": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "EisenhowerCR@brt.org; TrumanCR@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "a61e2de3-c102-4e3b-b50b-5ee7bf1d3396"
+                  }
+                }
+              },
+              "case": "Eisenhower and Truman Conference Rooms"
+            },
+            "Case 18": {
+              "actions": {
+                "Set_Room_email_variable_13_3_2": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "LincolnCR@brt.org; EisenhowerCR@brt.org; TrumanCR@brt.org"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "a61e2de3-c102-4e3b-b50b-5ee7bf1d3396"
+                  }
+                }
+              },
+              "case": "Presidential Conference Room\n"
+            }
+          },
+          "runAfter": {
+            "Set_Room_Name_Selection_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "55754db2-630e-4107-960d-d9deeb367492"
+          }
+        },
+        "Set_Start_Date_variable": {
+          "type": "SetVariable",
+          "inputs": {
+            "name": "StartDate",
+            "value": "@subtractFromTime(convertTimeZone(outputs('Get_item')?['body/Date'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour')"
+          },
+          "runAfter": {
+            "Switch": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "99513d79-d771-47c2-b6e1-ce2c2d7e7c48"
+          }
+        },
+        "Set_End_Date_variable": {
+          "type": "SetVariable",
+          "inputs": {
+            "name": "EndDate",
+            "value": "@subtractFromTime(convertTimeZone(outputs('Get_item')?['body/EndDateandTime'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour')"
+          },
+          "runAfter": {
+            "Set_Start_Date_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "76b7fa85-3b22-44ef-bf72-e60f67a68224"
+          }
+        },
+        "Send_an_email_from_a_shared_mailbox_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/MailboxAddress": "events@brt.org",
+              "emailMessage/To": "eventmanagement@brt.org;HMelo@brt.org",
+              "emailMessage/Subject": "New Event Request Form Submitted",
+              "emailMessage/Body": "<p class=\"editor-paragraph\">New Event Request Form Submitted</p><br><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Title:</strong></b></p><p class=\"editor-paragraph\">@{outputs('Get_item')?['body/Title']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Who is Hosting this Event?:</strong></b></p><p class=\"editor-paragraph\">@{outputs('Get_item')?['body/Who_x0020_is_x0020_Hosting_x0020/Value']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Start Date and Time:</strong></b></p><p class=\"editor-paragraph\">@{subtractFromTime(convertTimeZone(outputs('Get_item')?['body/Date'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour','f')}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">End Date and Time:</strong></b></p><p class=\"editor-paragraph\">@{subtractFromTime(convertTimeZone(outputs('Get_item')?['body/EndDateandTime'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour','f')}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Host Organization:</strong></b><br>@{outputs('Get_item')?['body/Host_x0020_Organization']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Event Type:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['EventType/Value']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Off-Site Address:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['Off_x002d_Site_x0020_Address']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Virtual/Hybrid Meeting Platform:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['Virtual_x002f_Hybrid_x0020_Meeti/Value']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">BRT Point of Contact for Meeting/Event:</strong></b></p><p class=\"editor-paragraph\">@{outputs('Get_item')?['body/BRTEventLead/DisplayName']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Room or Location Name:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['RoomorLocationName/Value']}</p><br><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">8th Floor Mobile Registration Desk Needed?:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['OData__x0038_th_x0020_Floor_x0020_Mobi/Value']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Meeting/Event Agenda:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['EventDescription']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Estimated In-person Attendees:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['Estimated_x0020_In_x002d_person_']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Estimated Virtual/Remote Attendees:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['Estimated_x0020_Virtual_x002f_Re']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Will Member Company CEOs be attending?:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['Will_x0020_Member_x0020_Company_/Value']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Room Setup Request:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['FacilityNeeds']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">AV/Technical needs:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['AV_x002f_Technicalneeds']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Will this event require and IT Department Staff Member supporting the event?:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['Will_x0020_this_x0020_event_x002']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Catering Needs:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['CateringNeeds']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Additional Notes:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['AdditionalNotes']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Created:</strong></b></p><p class=\"editor-paragraph\">@{convertTimeZone(outputs('Get_item')?['body/Created'],'Eastern Standard Time','Eastern Standard Time','f')}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Created By:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['Author/DisplayName']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Modified:</strong></b></p><p class=\"editor-paragraph\">@{convertTimeZone(triggerBody()?['Modified'],'Eastern Standard Time','Eastern Standard Time','f')}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Modified By:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['Editor/DisplayName']}</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\" style=\"font-size: 14px;\">Path:</strong></b></p><p class=\"editor-paragraph\">@{triggerBody()?['{Link}']}</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SharedMailboxSendEmailV2",
+              "connectionName": "shared_office365-1"
+            }
+          },
+          "runAfter": {
+            "Set_End_Date_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f052f817-ed9d-448d-af17-80e9dd88b932"
+          }
+        },
+        "Create_event_(V4)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "table": "AAMkAGJmM2NhYjYwLWY3YWUtNDQzZi04YWNmLWQ4NWY0NjU3ODBkNgBGAAAAAADH6FojD30qQ5UzDQ1pHb4KBwCnGNFsKKGVTZJlXbHcFXjvAAAAAAEGAACnGNFsKKGVTZJlXbHcFXjvAAD8YzerAAA=",
+              "item/subject": "@triggerBody()?['Title']",
+              "item/start": "@variables('StartDate')",
+              "item/end": "@variables('EndDate')",
+              "item/timeZone": "(UTC-05:00) Eastern Time (US & Canada)",
+              "item/requiredAttendees": "@variables('Room Email')",
+              "item/body": "<p class=\"editor-paragraph\">Title:<br>@{outputs('Get_item')?['body/Title']}<br><br>Who is Hosting this Event?:<br>@{outputs('Get_item')?['body/Who_x0020_is_x0020_Hosting_x0020/Value']}<br><br>Start Date and Time:<br>@{subtractFromTime(convertTimeZone(outputs('Get_item')?['body/Date'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour','f')}<br><br>End Date and Time:<br>@{subtractFromTime(convertTimeZone(outputs('Get_item')?['body/EndDateandTime'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour','f')}<br><br>Host Organization:<br>@{outputs('Get_item')?['body/Host_x0020_Organization']}<br><br>Event Type:<br>@{outputs('Get_item')?['body/EventType/Value']}<br><br>Off-Site Address:<br>@{triggerBody()?['Off_x002d_Site_x0020_Address']}<br><br>Virtual/Hybrid Meeting Platform:<br>@{triggerBody()?['Virtual_x002f_Hybrid_x0020_Meeti/Value']}<br><br>BRT Point of Contact for Meeting/Event:<br>@{outputs('Get_item')?['body/BRTEventLead/DisplayName']}<br><br>Room or Location Name:<br>@{triggerBody()?['RoomorLocationName/Value']}<br><br>8th Floor Mobile Registration Desk Needed?:<br>@{triggerBody()?['OData__x0038_th_x0020_Floor_x0020_Mobi/Value']}</p><p class=\"editor-paragraph\"><br>Meeting/Event Agenda:<br>@{triggerBody()?['EventDescription']}<br><br>Estimated In-person Attendees:<br>@{triggerBody()?['Estimated_x0020_In_x002d_person_']}<br><br>Estimated Virtual/Remote Attendees:<br>@{triggerBody()?['Estimated_x0020_Virtual_x002f_Re']}<br><br>Will Member Company CEOs be attending?:<br>@{triggerBody()?['Will_x0020_Member_x0020_Company_/Value']}<br><br>Room Setup Request:<br>@{triggerBody()?['FacilityNeeds']}<br><br>AV/Technical needs:<br>@{triggerBody()?['AV_x002f_Technicalneeds']}<br><br>Will this event require and IT Department Staff Member supporting the event?:<br>@{triggerBody()?['Will_x0020_this_x0020_event_x002']}<br><br>Catering Needs:<br>@{triggerBody()?['CateringNeeds']}<br><br>Additional Notes:<br>@{triggerBody()?['AdditionalNotes']}<br><br>Created:<br>@{convertTimeZone(outputs('Get_item')?['body/Created'],'Eastern Standard Time','Eastern Standard Time','f')}<br><br>Created By:<br>@{triggerBody()?['Author/DisplayName']}<br><br>Modified:<br>@{convertTimeZone(triggerBody()?['Modified'],'Eastern Standard Time','Eastern Standard Time','f')}<br><br>Modified By:<br>@{triggerBody()?['Editor/DisplayName']}<br><br>Path:</p><p class=\"editor-paragraph\">@{triggerBody()?['{Link}']}</p>"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "V4CalendarPostItem",
+              "connectionName": "shared_office365_1"
+            }
+          },
+          "runAfter": {
+            "Send_an_email_from_a_shared_mailbox_(V2)": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cee577af-a582-4704-b9a6-80205d72d25a"
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

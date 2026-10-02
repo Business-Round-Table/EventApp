@@ -1,0 +1,435 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline-1": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "arv_sharedsharepointonline_027f6"
+        },
+        "runtimeSource": "invoker"
+      },
+      "shared_office365-1": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "arv_sharedoffice365_add57"
+        },
+        "runtimeSource": "invoker"
+      },
+      "shared_office365-2": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "arv_sharedoffice365_26f29"
+        },
+        "runtimeSource": "invoker"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "description": "Please enter a number",
+                  "title": "Id",
+                  "type": "number",
+                  "x-ms-content-hint": "NUMBER",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "required": [
+                "number"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Get_item": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://businessroundtabledc.sharepoint.com/sites/MeetingsSupport",
+              "table": "8feda546-0ab4-4267-a16c-cc5e3908302a",
+              "id": "@triggerBody()?['number']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetItem",
+              "connectionName": "shared_sharepointonline-1"
+            }
+          },
+          "runAfter": {}
+        },
+        "Initialize_Start_Date_variable": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "StartDate",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "Get_item": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Initialize_End_Date_variable": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "EndDate",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "Initialize_Start_Date_variable": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Initialize_Room_Email_variable": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Room Email",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "Initialize_End_Date_variable": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Initialize_Room_Name_Selection_variable": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Room Name Selection",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "Initialize_Room_Email_variable": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Set_Room_Name_Selection_variable": {
+          "type": "SetVariable",
+          "inputs": {
+            "name": "Room Name Selection",
+            "value": "@outputs('Get_item')?['body/RoomorLocationName/Value']"
+          },
+          "runAfter": {
+            "Initialize_Room_Name_Selection_variable": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Switch": {
+          "type": "Switch",
+          "expression": "@variables('Room Name Selection')",
+          "default": {
+            "actions": {
+              "Set_variable": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "Room Email",
+                  "value": "@null"
+                }
+              }
+            }
+          },
+          "cases": {
+            "Case": {
+              "actions": {
+                "Set_Room_Email_variable": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "boardcr@brt.org"
+                  }
+                }
+              },
+              "case": "Board Conference Room"
+            },
+            "Case 2": {
+              "actions": {
+                "Set_Room_email_variable_2": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "teddycr@brt.org"
+                  }
+                }
+              },
+              "case": "Theodore Conference Room"
+            },
+            "Case 3": {
+              "actions": {
+                "Set_Room_email_variable_3": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "franklincr@brt.org"
+                  }
+                }
+              },
+              "case": "Franklin Conference Room"
+            },
+            "Case 4": {
+              "actions": {
+                "Set_Room_email_variable_4": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "teddycr@brt.org; franklincr@brt.org"
+                  }
+                }
+              },
+              "case": "Roosevelt Conference Room"
+            },
+            "Case 5": {
+              "actions": {
+                "Set_Room_email_variable_5": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "teddycr@brt.org; franklincr@brt.org; boardcr@brt.org"
+                  }
+                }
+              },
+              "case": "Riverview Conference Room"
+            },
+            "Case 6": {
+              "actions": {
+                "Set_Room_email_variable_6": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "plenarycr@brt.org"
+                  }
+                }
+              },
+              "case": "Plenary Conference Room"
+            },
+            "Case 7": {
+              "actions": {
+                "Set_Room_email_variable_7": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "greenroomcr@brt.org"
+                  }
+                }
+              },
+              "case": "Green Room"
+            },
+            "Case 8": {
+              "actions": {
+                "Set_Room_email_variable_8": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "washingtoncr@brt.org"
+                  }
+                }
+              },
+              "case": "Washington Conference Room"
+            },
+            "Case 9": {
+              "actions": {
+                "Set_Room_email_variable_9": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "adamscr@brt.org"
+                  }
+                }
+              },
+              "case": "Adams Conference Room"
+            },
+            "Case 10": {
+              "actions": {
+                "Set_Room_email_variable_10": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "8thflconfroom@brt.org"
+                  }
+                }
+              },
+              "case": "8th Floor Conference Room"
+            },
+            "Case 11": {
+              "actions": {
+                "Set_Room_email_variable_11": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "MobileCart@brt.org"
+                  }
+                }
+              },
+              "case": "4th Floor Conference Room"
+            },
+            "Case 12": {
+              "actions": {
+                "Set_Room_email_variable_12": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "Signaturecr@brt.org"
+                  }
+                }
+              },
+              "case": "Signature Conference Room"
+            },
+            "Case 13": {
+              "actions": {
+                "Set_Room_email_variable_13": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "Room Email",
+                    "value": "jeffersoncr@brt.org"
+                  }
+                }
+              },
+              "case": "Jefferson Conference Room"
+            }
+          },
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Set_Start_Date_variable": {
+          "type": "SetVariable",
+          "inputs": {
+            "name": "StartDate",
+            "value": "@subtractFromTime(convertTimeZone(outputs('Get_item')?['body/Date'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour')"
+          },
+          "runAfter": {
+            "Switch": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Set_End_Date_variable": {
+          "type": "SetVariable",
+          "inputs": {
+            "name": "EndDate",
+            "value": "@subtractFromTime(convertTimeZone(outputs('Get_item')?['body/EndDateandTime'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour')"
+          },
+          "runAfter": {
+            "Set_Start_Date_variable": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Send_an_email_from_a_shared_mailbox_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/MailboxAddress": "events@brt.org",
+              "emailMessage/To": "eventmanagement@brt.org;HMelo@brt.org",
+              "emailMessage/Subject": "New Event Request Form Submitted",
+              "emailMessage/Body": "<p class=\"editor-paragraph\">New Event Request Form Submitted</p><br><p class=\"editor-paragraph\">Title:<br>@{outputs('Get_item')?['body/Title']}<br><br>Who is Hosting this Event?:<br>@{outputs('Get_item')?['body/Who_x0020_is_x0020_Hosting_x0020/Value']}<br><br>Start Date and Time:<br>@{subtractFromTime(convertTimeZone(outputs('Get_item')?['body/Date'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour','f')}<br><br>End Date and Time:<br>@{subtractFromTime(convertTimeZone(outputs('Get_item')?['body/EndDateandTime'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour','f')}<br><br>Host Organization:<br>@{outputs('Get_item')?['body/HostOrganization']}<br><br>Event Type:<br>@{outputs('Get_item')?['body/EventType/Value']}<br><br>Off-Site Address:<br>@{outputs('Get_item')?['body/Off_x002d_Site_x0020_Address']}<br><br>Virtual/Hybrid Meeting Platform:<br>@{outputs('Get_item')?['body/Virtual_x002f_Hybrid_x0020_Meeti/Value']}<br><br>BRT Point of Contact for Meeting/Event:<br>@{outputs('Get_item')?['body/BRTEventLead/DisplayName']}<br><br>Room or Location Name:<br>@{outputs('Get_item')?['body/RoomorLocationName/Value']}<br><br>Meeting/Event Agenda:<br>@{outputs('Get_item')?['body/EventDescription']}<br><br>Estimated In-person Attendees:<br>@{outputs('Get_item')?['body/Estimated_x0020_In_x002d_person_']}<br><br>Estimated Virtual/Remote Attendees:<br>@{outputs('Get_item')?['body/Estimated_x0020_Virtual_x002f_Re']}<br><br>Will Member Company CEOs be attending?:<br>@{outputs('Get_item')?['body/Will_x0020_Member_x0020_Company_/Value']}<br><br>Room Setup Request:<br>@{outputs('Get_item')?['body/FacilityNeeds']}<br><br>AV/Technical needs:<br>@{outputs('Get_item')?['body/AV_x002f_Technicalneeds']}<br><br>Will this event require and IT Department Staff Member supporting the event?:<br>@{outputs('Get_item')?['body/Will_x0020_this_x0020_event_x002']}<br><br>Catering Needs:<br>@{outputs('Get_item')?['body/CateringNeeds']}<br><br>Additional Notes:<br>@{outputs('Get_item')?['body/AdditionalNotes']}<br><br>Created:<br>@{convertTimeZone(outputs('Get_item')?['body/Created'],'Eastern Standard Time','Eastern Standard Time','f')}<br><br>Created By:<br>@{outputs('Get_item')?['body/Author/DisplayName']}<br><br>Modified:<br>@{convertTimeZone(outputs('Get_item')?['body/Modified'],'Eastern Standard Time','Eastern Standard Time','f')}<br><br>Modified By:<br>@{outputs('Get_item')?['body/Editor/DisplayName']}<br><br>Path:<br>@{outputs('Get_item')?['body/{Link}']}</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SharedMailboxSendEmailV2",
+              "connectionName": "shared_office365-1"
+            }
+          },
+          "runAfter": {
+            "Create_event_(V4)-copy": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Create_event_(V4)-copy": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "table": "AQMkADQwNTliYzkzLTUxZjctNDgxNy04MjRiLTE3YzE5MzZlNWQzOABGAAADCbPap9WQJ0y3WWzxrQgc7gcAE-8M6xCBXE6bax3iph8L1gAAAgEGAAAAE-8M6xCBXE6bax3iph8L1gACOkYayQAAAA==",
+              "item/subject": "@variables('Event Title')",
+              "item/start": "@subtractFromTime(convertTimeZone(outputs('Get_item')?['body/Date'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour','f')",
+              "item/end": "@subtractFromTime(convertTimeZone(outputs('Get_item')?['body/EndDateandTime'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour','f')",
+              "item/timeZone": "(UTC-05:00) Eastern Time (US & Canada)",
+              "item/requiredAttendees": "@variables('Room Email')",
+              "item/body": "<p class=\"editor-paragraph\"><br><br>Title:<br>@{outputs('Get_item')?['body/Title']}<br><br>Who is Hosting this Event?:<br>@{outputs('Get_item')?['body/Who_x0020_is_x0020_Hosting_x0020/Value']}<br><br>Start Date and Time:<br>@{subtractFromTime(convertTimeZone(outputs('Get_item')?['body/Date'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour','f')}<br><br>End Date and Time:<br>@{subtractFromTime(convertTimeZone(outputs('Get_item')?['body/EndDateandTime'],'Eastern Standard Time','Eastern Standard Time'),3,'Hour','f')}<br><br>Host Organization:<br>@{outputs('Get_item')?['body/HostOrganization']}<br><br>Event Type:<br>@{outputs('Get_item')?['body/EventType/Value']}<br><br>Off-Site Address:<br>@{outputs('Get_item')?['body/Off_x002d_Site_x0020_Address']}<br><br>Virtual/Hybrid Meeting Platform:<br>@{outputs('Get_item')?['body/Virtual_x002f_Hybrid_x0020_Meeti/Value']}<br><br>BRT Point of Contact for Meeting/Event:<br>@{outputs('Get_item')?['body/BRTEventLead/DisplayName']}<br><br>Room or Location Name:<br>@{outputs('Get_item')?['body/RoomorLocationName/Value']}<br><br>Meeting/Event Agenda:<br>@{outputs('Get_item')?['body/EventDescription']}<br><br>Estimated In-person Attendees:<br>@{outputs('Get_item')?['body/Estimated_x0020_In_x002d_person_']}<br><br>Estimated Virtual/Remote Attendees:<br>@{outputs('Get_item')?['body/Estimated_x0020_Virtual_x002f_Re']}<br><br>Will Member Company CEOs be attending?:<br>@{outputs('Get_item')?['body/Will_x0020_Member_x0020_Company_/Value']}<br><br>Room Setup Request:<br>@{outputs('Get_item')?['body/FacilityNeeds']}<br><br>AV/Technical needs:<br>@{outputs('Get_item')?['body/AV_x002f_Technicalneeds']}<br><br>Will this event require and IT Department Staff Member supporting the event?:<br>@{outputs('Get_item')?['body/Will_x0020_this_x0020_event_x002']}<br><br>Catering Needs:<br>@{outputs('Get_item')?['body/CateringNeeds']}<br><br>Additional Notes:<br>@{outputs('Get_item')?['body/AdditionalNotes']}<br><br>Created:<br>@{convertTimeZone(outputs('Get_item')?['body/Created'],'Eastern Standard Time','Eastern Standard Time','f')}<br><br>Created By:<br>@{outputs('Get_item')?['body/Author/DisplayName']}<br><br>Modified:<br>@{convertTimeZone(outputs('Get_item')?['body/Modified'],'Eastern Standard Time','Eastern Standard Time','f')}<br><br>Modified By:<br>@{outputs('Get_item')?['body/Editor/DisplayName']}<br><br>Path:<br>@{outputs('Get_item')?['body/{Link}']}</p>"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "V4CalendarPostItem",
+              "connectionName": "shared_office365-2"
+            }
+          },
+          "runAfter": {
+            "Set_End_Date_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cee577af-a582-4704-b9a6-80205d72d25a"
+          }
+        },
+        "Initialize_variable": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Event Title",
+                "type": "string",
+                "value": "@outputs('Get_item')?['body/Title']"
+              }
+            ]
+          },
+          "runAfter": {
+            "Set_Room_Name_Selection_variable": [
+              "Succeeded"
+            ]
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}
